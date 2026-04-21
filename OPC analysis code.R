@@ -1,5 +1,5 @@
-# OPHC 24 JAN 2026
-
+# OPHC 30 MARCH 2026
+# From R file originally called: OPHC 30MAR2026-dat6.R
 library(ggplot2)
 library(tidyverse)
 library(ggthemes)
@@ -26,6 +26,11 @@ dat<-dat[2:11]
 # dat2025<-subset(dat,dat$Month==6 & dat$Year==2025)
 # dat<-subset(dat,dat$Month==12)
 # dat<-rbind(dat,dat2025)
+
+# 12 month estimates for each provisional death, so we can take the 6th month of each year and represent July 2019-June 2025
+dat6<-subset(dat,dat$Month==6)
+# dat12<-subset(dat,dat$Month==12)
+dat<-dat6
 
 # imputing 1 since the blank cells have 1-9 overdose deaths. 
 colnames(dat)[10]<-'Provisional.Drug.Overdose.Deaths'
@@ -352,7 +357,12 @@ finalmerge$totalsavings<-finalmerge$infectiousdiscountedcost + finalmerge$valueo
 finalmerge$fips<-finalmerge$fips.x
 finalmergesub<-subset(finalmerge, finalmerge$writtenpercents=='Point twenty-five')
 
+# finalmergesub_test2025_6<-subset(finalmerge,finalmerge$YearMonth=='2025-06' & finalmerge$writtenpercents=='Point twenty-five')
+# finalmergesub_test2024_12<-subset(finalmerge,finalmerge$YearMonth=='2024-12' & finalmerge$writtenpercents=='Point twenty-five')
+
 finalmergesub<-subset(finalmerge,finalmerge$YearMonth=='2025-06' & finalmerge$writtenpercents=='Point twenty-five')
+# finalmergesub<-subset(finalmerge,finalmerge$YearMonth=='2024-12' & finalmerge$writtenpercents=='Point twenty-five')
+
 finalmergesubtwopointfive<-subset(finalmergesub,finalmergesub$writtenpercents=='Point twenty-five')
 
 # cumulative deaths regardless of OPHCS:
@@ -454,132 +464,6 @@ sum(finalmergesubten$infectiousdiscountedcost,na.rm = T)
 
 cat('Cumulative statistical cost of life of if 1% of injections were to occur at the OPHC:')
 sum(finalmergesubten$valueoflivessaved,na.rm = T)
-
-
-#PLOTTING
-theme_set(theme(axis.text = element_text(size=8),
-                axis.title = element_text(size=8),
-                strip.text = element_text(size=8),
-                axis.text.x = element_text(angle=0),
-                strip.text.x = element_text(size = 8,margin = margin(.1, 0, .1, 0, "cm")),
-                legend.text = element_text(size=7),
-                legend.title = element_text(size=7),
-                legend.position = 'bottom',
-                panel.border=element_blank(),
-                panel.background = element_blank(),
-                panel.grid.major = element_line(color='light grey'))
-)
-
-
-us_states<-us_map(
-  regions = c("states")
-)
-us_counties<-us_map(
-  regions = c("counties")
-)
-
-us_counties$fips
-# counties_with_merge<-us_counties |>
-#   left_join(finalmergesubtwopointfive$fips, by = join_by(fips))
-
-
-counties_with_merge<-merge(us_counties,
-                           finalmergesubtwopointfive,
-                            by = 'fips',
-                            all.x = T)
-
-# counties_with_merge$log2cumulativedeathsaverted<-log2(1+counties_with_merge$cumulativelivessaved)
-# Get x-axis limits of the bounding box for the state data
-xlim_current <- st_bbox(us_states)$xlim
-
-# Add 540ish km (or 10% of the US) to the bounds (thus shifting the window over)
-xlim_expanded <- c(
-  xlim_current[1] + (0.1 * diff(xlim_current)), 
-  xlim_current[2] + (0.1 * diff(xlim_current))
-)
-
-# ggplot() +
-#   geom_sf(data = us_states, fill = "#0074D9", color = "white", linewidth = 0.25) +
-#   coord_sf(crs = st_crs("ESRI:102003"), xlim = xlim_expanded)
-# 
-# interior_state_borders <- st_intersection(us_states) |>
-#   filter(n.overlaps > 1) |> 
-#   # Remove weird points that st_intersection() adds
-#   filter(!(st_geometry_type(geom) %in% c("POINT", "MULTIPOINT")))
-# 
-# ggplot() +
-#   geom_sf(data = us_states, fill = "#0074D9", linewidth = 0) +
-#   geom_sf(data = interior_state_borders, linewidth = 0.25, color = "white") +
-#   coord_sf(crs = st_crs("ESRI:102003"), xlim = xlim_expanded)
-# 
-# 
-# 
-# 
-# library(viridis)
-# ggplot() +
-#   # Add counties filled with unemployment levels
-#   geom_sf(
-#     data = counties_with_merge, aes(fill = cumulativelivessaved), linewidth = 0
-#   ) +
-#   # Add interior state boundaries
-#   geom_sf(
-#     data = interior_state_borders, color = "white", linewidth = 0.25
-#   ) +
-#   scale_fill_viridis()+
-#    coord_sf(crs = st_crs("ESRI:102003"), xlim = xlim_expanded) +
-#   theme(
-#     panel.background =  element_blank(),
-#     legend.position = "inside",
-#     legend.position.inside = c(0.86, 0.32),
-#     legend.direction = "vertical",
-# 
-#   )
-# 
-# 
-# library(legendry)
-# 
-# # Convert the county polygons into single points
-# counties_with_merge_points <- counties_with_merge |> 
-#   st_point_on_surface()
-# 
-# ggplot() +
-#   # Use a gray background
-#   geom_sf(data = us_states, fill = "gray90", linewidth = 0) +
-#   geom_sf(data = interior_state_borders, linewidth = 0.25, color = "white") +
-#   # Include semi-transparent points with shape 21 (so there's a border)
-#   geom_sf(
-#     data = counties_with_merge_points, 
-#     aes(size = deathsper100k, fill = cumulativelivessaved), 
-#     pch = 21, color = "white", stroke = 0.25, alpha = 0.5
-#   ) +
-#   scale_size_continuous(
-#     range = c(1, 9), labels = scales::label_comma(), 
-#     breaks = c(10000, 100000, 1000000),
-#     guide = guide_legend(override.aes = list(pch = 19, color = "black"))
-#   ) +
-#   scale_fill_viridis()+
-#   
-#   
-#   theme(
-#     panel.background =  element_blank(),
-#     legend.position.inside = c(0.86, 0.32),
-#     legend.direction = "vertical",
-#     legend.position = "right",
-#   )+
-#   scale_size_continuous(
-#     # range = c(1, 11), labels = scales::label_comma(),
-#     breaks = c(1, 200),
-#     guide = guide_circles(
-#       text_position = "right",
-#       override.aes = list(
-#         fill = "grey20", alpha = 0.65
-#       )
-#     )
-#   )
-
-
-
-
 
 # rm(twopointfivelist)
 # saving
@@ -683,12 +567,14 @@ rownames(SummaryDataFrame)<-c(
 SummaryDataFrame$`Total costs`<-SummaryDataFrame$`Discounted lifetime cost infections`+SummaryDataFrame$`Cost of life`
 
 SummaryDataFrame$`Total costs (billions)`<-SummaryDataFrame$`Total costs`/1000000000
-write.csv(SummaryDataFrame,'SummaryTable-18Mar2026.csv')
+
+
+write.csv(SummaryDataFrame,'SummaryTable-30Mar2026.csv')
 
 transposedSummaryDataFrame<-as.data.frame(t(SummaryDataFrame))
 
 
-write.csv(transposedSummaryDataFrame,'transposedSummaryTable-18Mar2026.csv')
+write.csv(transposedSummaryDataFrame,'transposedSummaryTable-30Mar2026.csv')
 
 
 ####
@@ -699,7 +585,7 @@ finalmergesubten_top50_pwid<-slice_max(finalmergesubten,n = 50,order_by = pwid)
 
 top50pwid<-as.data.frame(unique(finalmergesubfive_top50_pwid$state_county))
 colnames(top50pwid)<-'Counties with highest number of PWID'
-write.csv(top50pwid,'top50pwid-counties-18Mar2026.csv',row.names = F)
+write.csv(top50pwid,'top50pwid-counties-30Mar2026.csv',row.names = F)
 
 twopointfivelist<-list(
   sum(finalmergesubtwopointfive_top50_pwid$cumulativelivessaved,na.rm = T),
@@ -801,11 +687,10 @@ rownames(SummaryDataFrame)<-c(
 SummaryDataFrame$`Total costs`<-SummaryDataFrame$`Discounted lifetime cost infections`+SummaryDataFrame$`Cost of life`
 
 SummaryDataFrame$`Total costs (billions)`<-SummaryDataFrame$`Total costs`/1000000000
-write.csv(SummaryDataFrame,'SummaryTable_top50_pwid-18Mar2026.csv')
+write.csv(SummaryDataFrame,'SummaryTable_top50_pwid-30Mar2026.csv')
 
 transposedSummaryDataFrame<-as.data.frame(t(SummaryDataFrame))
-write.csv(transposedSummaryDataFrame,'transposedSummaryTable_top50_pwid-18Mar2026.csv')
-
+write.csv(transposedSummaryDataFrame,'transposedSummaryTable_top50_pwid-30Mar2026.csv')
 
 #### deaths per 100k saving
 
@@ -816,7 +701,7 @@ finalmergesubten_top50_deathsper100k<-slice_max(finalmergesubten,n = 50,order_by
 
 top50deathsper100k<-as.data.frame(unique(finalmergesubfive_top50_deathsper100k$state_county))
 colnames(top50deathsper100k)<-'Counties with highest number of deathsper100k'
-write.csv(top50deathsper100k,'top50deathsper100k-counties-18Mar2026.csv',row.names = F)
+write.csv(top50deathsper100k,'top50deathsper100k-counties-30Mar2026.csv',row.names = F)
 
 twopointfivelist<-list(
   sum(finalmergesubtwopointfive_top50_deathsper100k$cumulativelivessaved,na.rm = T),
@@ -918,19 +803,19 @@ rownames(SummaryDataFrame)<-c(
 SummaryDataFrame$`Total costs`<-SummaryDataFrame$`Discounted lifetime cost infections`+SummaryDataFrame$`Cost of life`
 
 SummaryDataFrame$`Total costs (billions)`<-SummaryDataFrame$`Total costs`/1000000000
-write.csv(SummaryDataFrame,'SummaryTable_top50_deathsper100k-18Mar2026.csv')
+write.csv(SummaryDataFrame,'SummaryTable_top50_deathsper100k-30Mar2026.csv')
 
 transposedSummaryDataFrame<-as.data.frame(t(SummaryDataFrame))
-write.csv(transposedSummaryDataFrame,'transposedSummaryTable_top50_deathsper100k-18Mar2026.csv')
+write.csv(transposedSummaryDataFrame,'transposedSummaryTable_top50_deathsper100k-30Mar2026.csv')
 
 # save final merge
 finalmerge$percentinjections<-finalmerge$freqinjections*100
 finalmerge$cumulativelivessavedper100k<-finalmerge$cumulativelivessaved/(finalmerge$pop18plus*100000)
-saveRDS(finalmerge,'finalmerge-18Mar2026.rds')
-finalmerge_June2025<-subset(finalmerge,finalmerge$YearMonth=='2025-06')
-finalmerge_December2020_2024<-subset(finalmerge,finalmerge$Year != 2025 & finalmerge$Month ==12)
-finalmerge_merge<-rbind(finalmerge_December2020_2024,finalmerge_June2025)
-saveRDS(finalmerge_merge,'finalmerge-short-18Mar2026.rds')
+saveRDS(finalmerge,'finalmerge-30Mar2026.rds')
+# finalmerge_June2025<-subset(finalmerge,finalmerge$YearMonth=='2025-06')
+# finalmerge_December2020_2024<-subset(finalmerge,finalmerge$Year != 2025 & finalmerge$Month ==12)
+# finalmerge_merge<-rbind(finalmerge_December2020_2024,finalmerge_June2025)
+# saveRDS(finalmerge_merge,'finalmerge-short-30Mar2026.rds')
 # finalmerge<-readRDS(file = 'finalmerge-09Apr2025.rds')
 
 write.csv(t(subset(finalmergesubtwopointfive,finalmergesubtwopointfive$fips==13121 |
@@ -938,13 +823,13 @@ write.csv(t(subset(finalmergesubtwopointfive,finalmergesubtwopointfive$fips==131
                         finalmergesubtwopointfive$fips==36055 
                      
                      )),
-          'finalmergetwopointfive_select_cities-18Mar2026.csv',row.names = T)
+          'finalmergetwopointfive_select_cities-30Mar2026.csv',row.names = T)
 
 write.csv(t(subset(finalmergesubten,finalmergesubten$fips==13121 |
                      finalmergesubten$state_county=='California-San Diego County' | 
                      finalmergesubten$fips==36055 
                    
 )),
-'finalmergesubten_select_cities-18Mar2026.csv',row.names = T)
+'finalmergesubten_select_cities-30Mar2026.csv',row.names = T)
 
 
